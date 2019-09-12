@@ -46,8 +46,27 @@ export function vAngle(a, b) {
     if (magA === 0 || magB === 0) {
         return 0;
     } else {
-        const cosTheta = Math.min(vDot(a, b) / (vMagnitude(a) * vMagnitude(b)), 1);
+        const cosTheta = Math.max(Math.min(vDot(a, b) / (vMagnitude(a) * vMagnitude(b)), 1), -1);
         const dir = Math.sign(vCross(a, b)) < 0 ? -1 : 1;
         return Math.acos(cosTheta) * dir;
     }
+}
+
+export function vToLocal(vector, body) {
+    return vRotate(vector, -body.dir);
+}
+
+export function vToWorld(vector, body) {
+    return vRotate(vector, body.dir);
+}
+
+export function vRotate(vector, angle) {
+    return {
+        x: Math.cos(angle) * vector.x - Math.sin(angle) * vector.y,
+        y: Math.sin(angle) * vector.x + Math.cos(angle) * vector.y
+    };
+}
+
+export function vProject(vector, unit) {
+    return {x: vDot(vector, unit), y: vDot(vector, {x: -unit.y, y: unit.x})};
 }

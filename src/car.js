@@ -1,11 +1,11 @@
 import { STEP_SIZE } from './constants.js';
-import { wrap, vAngle } from './utility.js';
+import { vAngle, vMagnitude } from './utility.js';
 
-const enginePower = 6300;
+const enginePower = 8000;
 const powerStep = 10000;
 const mass = 1200;
 
-const turnRateDelta = Math.PI * 2;
+const turnRateDelta = Math.PI;
 const maxTurnRate = Math.PI * 0.25;
 
 export default class Car {
@@ -16,20 +16,22 @@ export default class Car {
 
         this.goingForward = true;
         this.braking = false;
+        this.handBrake = false;
         this.reversing = false;
-        
+
         this.turnRate = 0;
         this.engine = 0;
 
         this.mass = mass;
         this.vector = { x: Math.cos(dir), y: Math.sin(dir) };
         this.velocity = { x: 0, y: 0 };
+        this.angularVelocity = 0;
+        this.slipAngle = 0;
 
         this.controls = {};
 
 
-        this.local = {x: 0, y: 0};
-        this.slip = {x: 0, y: 0, angle: 0};
+        this.debug = {};
     }
 
     bindControls(keys) {
@@ -37,8 +39,12 @@ export default class Car {
     }
 
     update() {
-        const AoA = vAngle(this.vector, this.velocity);
-        this.goingForward = Math.abs(AoA) * 2 < Math.PI;
+        this.slipAngle = vAngle(this.vector, this.velocity);
+        if (Number.isNaN(this.slipAngle)) {
+            console.log(this);
+            throw new Error();
+        }
+        this.goingForward = Math.abs(this.slipAngle) * 2 < Math.PI;
         this.reversing = false;
 
         if (this.controls.ArrowUp) {
@@ -67,10 +73,19 @@ export default class Car {
             this.braking = false;
         }
 
+        if (this.controls.Space) {
+            this.braking = true;
+            this.handBrake = true;
+        } else {
+            this.handBrake = false;
+        }
+
+        const speed = vMagnitude(this.velocity);
+        const speedMultiplier = Math.max(Math.min((40 - speed) / 35, 1), 0.25);
         if (this.controls.ArrowLeft) {
-            this.turnRate = Math.max(this.turnRate - turnRateDelta * STEP_SIZE, -maxTurnRate);
+            this.turnRate = Math.max(this.turnRate - turnRateDelta * STEP_SIZE * speedMultiplier, -maxTurnRate * speedMultiplier);
         } else if (this.controls.ArrowRight) {
-            this.turnRate = Math.min(this.turnRate + turnRateDelta * STEP_SIZE, maxTurnRate);
+            this.turnRate = Math.min(this.turnRate + turnRateDelta * STEP_SIZE * speedMultiplier, maxTurnRate * speedMultiplier);
         } else {
             if (this.turnRate > 0) {
                 this.turnRate = Math.max(this.turnRate - turnRateDelta * STEP_SIZE, 0);

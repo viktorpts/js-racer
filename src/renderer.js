@@ -9,7 +9,8 @@ export function getRenderer() {
     };
 
     function begin() {
-        ctx.clearRect(0, 0, 800, 600);
+        ctx.fillStyle = '#999999';
+        ctx.fillRect(0, 0, 800, 600);
         ctx.save();
         ctx.scale(camera.zoom, camera.zoom);
         ctx.translate(-camera.x, -camera.y);
@@ -27,7 +28,7 @@ export function getRenderer() {
     }
 
     function renderGraph() {
-        ctx.strokeStyle = '#666666';
+        ctx.strokeStyle = '#cccccc';
         ctx.beginPath();
         for (let col = 0; col < 1000; col++) {
             ctx.moveTo(col * 100, 0);
@@ -49,46 +50,42 @@ export function getRenderer() {
         
         // Vector debug
         renderVector(actor.velocity.x, actor.velocity.y, '#ff00ff');
-        renderVector(actor.slip.x, actor.slip.y, '#00ffff');
         // End vector debug
 
         ctx.rotate(actor.dir);
 
         ctx.fillStyle = 'blue';
-        ctx.fillRect(-10, -10, 40, 20);
+        ctx.fillRect(-20, -10, 40, 20);
 
         ctx.fillStyle = '#333333';
-        renderWheel(-3, -10, 0);
-        renderWheel(-3, 10, 0);
-        renderWheel(23, -10, actor.turnRate);
-        renderWheel(23, 10, actor.turnRate);
+        renderWheel(-13, -10, 0);
+        renderWheel(-13, 10, 0);
+        renderWheel(13, -10, actor.turnRate);
+        renderWheel(13, 10, actor.turnRate);
 
         ctx.strokeStyle = 'black';
         ctx.beginPath();
-        ctx.moveTo(-10, 0);
-        ctx.lineTo(30, 0);
+        ctx.moveTo(-20, 0);
+        ctx.lineTo(20, 0);
         ctx.moveTo(0, -10);
         ctx.lineTo(0, 10);
-        ctx.moveTo(20, 10);
-        ctx.lineTo(30, 0);
-        ctx.lineTo(20, -10);
+        ctx.moveTo(10, 10);
+        ctx.lineTo(20, 0);
+        ctx.lineTo(10, -10);
         ctx.stroke();
         ctx.closePath();
 
         if (actor.braking) {
             ctx.fillStyle = 'red';
-            ctx.fillRect(-9, -10, 2, 4);
-            ctx.fillRect(-9, 6, 2, 4);
+            ctx.fillRect(-19, -10, 2, 4);
+            ctx.fillRect(-19, 6, 2, 4);
         } else if (actor.reversing) {
             ctx.fillStyle = 'white';
-            ctx.fillRect(-9, -10, 2, 4);
-            ctx.fillRect(-9, 6, 2, 4);
+            ctx.fillRect(-19, -10, 2, 4);
+            ctx.fillRect(-19, 6, 2, 4);
         }
 
-        // Vector debug
-        renderVector(actor.local.x, 0, '#00ff00');
-        renderVector(0, actor.local.y, '#ff0000');
-        // End vector debug
+        renderVector(actor.debug.lateral.x, actor.debug.lateral.y, '#ff0000');
 
         ctx.restore();
     }
