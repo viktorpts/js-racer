@@ -9,8 +9,22 @@ export default class Scene {
 
         const keys = {};
         initInput(keys);
-        this.actor = new Car(5000, 5000);
+        this.actor = new Car(5000, 5000, Math.PI);
         this.actor.bindControls(keys);
+        this.track = [
+            { x: 5000, y: 5000 },
+            { x: 4900, y: 5000 },
+            { x: 4875, y: 4925 },
+            { x: 4975, y: 4925 },
+            { x: 4950, y: 4900 },
+            { x: 4875, y: 4900 },
+            { x: 4900, y: 4750 },
+            { x: 4950, y: 4825 },
+            { x: 5000, y: 4900 },
+            { x: 5075, y: 4985 },
+        ];
+
+        this.path = this.renderer.createPath(this.track);
     }
 
     step() {
@@ -21,10 +35,14 @@ export default class Scene {
 
     render() {
         this.renderer.track(this.actor);
-        
+
         this.renderer.begin();
         this.renderer.renderGraph();
-        this.renderer.renderCar(this.actor);
+
+        const inside = this.renderer.renderPath(this.path, this.actor);
+
+        this.renderer.renderCar(this.actor, inside);
+
         this.renderer.end();
     }
 }

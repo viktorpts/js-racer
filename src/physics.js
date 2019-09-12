@@ -2,9 +2,9 @@ import { STEP_SIZE } from './constants.js';
 import { vScale, vMagnitude, vAdd, wrap, vToWorld, vProject, vAngle } from './utility.js';
 
 const dragCoef = 1.2;
-const rrCoef = 30;
+const rrCoef = 20;
 const brakeCoef = 20000;
-const corneringCoef = 6000;
+const corneringCoef = 30000;
 const inertia = 500;
 
 export function applyLocomotion(actor) {
@@ -14,7 +14,7 @@ export function applyLocomotion(actor) {
 
     let rearSlipRatio = getSlipRatio(getRearSlipAngle(actor, localVelocity.x, localVelocity.y));
     if (actor.handBrake) {
-        rearSlipRatio *= 0.25;
+        rearSlipRatio *= 0.75;
     }
     const frontSlipRatio = getSlipRatio(getFrontSlipAngle(actor, localVelocity.x, localVelocity.y));
     const rearLat = rearSlipRatio * -corneringCoef;
