@@ -8,6 +8,10 @@ export function wrap(value, min, max) {
     }
 }
 
+export function clamp(value, min, max) {
+    return Math.max(Math.min(value, max), min);
+}
+
 export function toDeg(rad) {
     return (rad / Math.PI * 180).toFixed(0);
 }
@@ -64,6 +68,13 @@ export function vRotate(vector, angle) {
     return {
         x: Math.cos(angle) * vector.x - Math.sin(angle) * vector.y,
         y: Math.sin(angle) * vector.x + Math.cos(angle) * vector.y
+    };
+}
+
+export function pToWorld(point, body) {
+    return {
+        x:  point.x + body.x,
+        y:  point.y + body.y
     };
 }
 

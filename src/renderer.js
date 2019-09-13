@@ -42,22 +42,19 @@ export function getRenderer() {
         ctx.closePath();
     }
 
-    function renderCar(actor, inside) {
+    function renderCar(actor) {
         const { x, y } = worldToCanvas({ x: actor.x, y: actor.y });
         ctx.save();
 
         ctx.translate(x, y);
 
         // Vector debug
-        renderVector(actor.velocity.x, actor.velocity.y, '#ff00ff');
+        //renderVector(actor.velocity.x, actor.velocity.y, '#ff00ff');
         // End vector debug
 
         ctx.rotate(actor.dir);
 
         ctx.fillStyle = 'blue';
-        if (!inside) {
-            ctx.fillStyle = 'red';
-        }
         ctx.fillRect(-20, -10, 40, 20);
 
         ctx.fillStyle = '#333333';
@@ -88,7 +85,13 @@ export function getRenderer() {
             ctx.fillRect(-19, 6, 2, 4);
         }
 
-        renderVector(actor.debug.lateral.x, actor.debug.lateral.y, '#ff0000');
+        // Vector debu
+        /*
+        if (actor.debug.lateral != undefined) {
+            renderVector(actor.debug.lateral.x, actor.debug.lateral.y, '#ff0000');
+        }
+        */
+        // End vector debug
 
         ctx.restore();
     }
@@ -109,6 +112,8 @@ export function getRenderer() {
         ctx.lineTo(x * worldScale, y * worldScale);
         ctx.stroke();
         ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fillRect(x * worldScale - 2, y * worldScale - 2, 4, 4);
         ctx.restore();
     }
 
@@ -159,6 +164,9 @@ export function getRenderer() {
 
     function createPath(track) {
         const path = new Path2D();
+        if (track.length == 0) {
+            return path;
+        }
         const start = worldToCanvas(track[0]);
 
         path.moveTo(start.x, start.y);
@@ -172,32 +180,103 @@ export function getRenderer() {
         return path;
     }
 
-    function renderPath(path, actor) {
+    function renderPath(path) {
         ctx.save();
 
-        ctx.setLineDash([40, 40]);
-
+        
         ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'green';
+        ctx.lineWidth = 350;
+        ctx.stroke(path);
+
+        ctx.setLineDash([40, 40]);
         ctx.strokeStyle = 'black';
         ctx.lineWidth = 250;
         ctx.stroke(path);
+
         ctx.strokeStyle = 'white';
         ctx.lineDashOffset = 40;
         ctx.stroke(path);
+
         ctx.strokeStyle = '#999999';
         ctx.setLineDash([]);
         ctx.lineWidth = 240;
         ctx.stroke(path);
 
-        const inside = ctx.isPointInStroke(path, 50000, 50000);
+        ctx.restore();
+    }
+
+    function renderBarrier(barrier) {
+        const { x, y } = worldToCanvas({ x: barrier.x, y: barrier.y });
+        const l = barrier.length * worldScale;
+        const w = barrier.width * worldScale;
+        const halfL = l * 0.5;
+        const halfW = w * 0.5;
+
+        ctx.save();
+
+        ctx.translate(x, y);
+        ctx.rotate(barrier.dir);
+
+        ctx.fillStyle = '#333';
+        /*
+        if (barrier.collision) {
+            ctx.fillStyle = 'red';
+        } else if (barrier.close) {
+            ctx.fillStyle = 'yellow';
+        }
+        */
+        ctx.fillRect(-halfL, -halfW, l, w);
+
+        const path = new Path2D();
+        path.moveTo(-halfL, -halfW);
+        path.lineTo(halfL, -halfW);
+        path.lineTo(halfL, halfW);
+        path.lineTo(-halfL, halfW);
+        path.closePath();
+
+        ctx.setLineDash([20, 20]);
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 5;
+        ctx.stroke(path);
+        ctx.strokeStyle = 'white';
+        ctx.lineDashOffset = 20;
+        ctx.stroke(path);
 
         ctx.restore();
+    }
 
-        const {x, y} = worldToCanvas(actor);
-        return inside;
+    function renderFinish(wX, wY, dir) {
+        const {x, y} = worldToCanvas({x: wX, y: wY});
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(dir);
+
+        ctx.beginPath();
+        ctx.lineWidth = 10;
+        ctx.setLineDash([10, 10]);
+        ctx.moveTo(0, -100);
+        ctx.lineTo(0, 100);
+        ctx.moveTo(10, 100);
+        ctx.lineTo(10, -100);
+        ctx.moveTo(20, -100);
+        ctx.lineTo(20, 100);
+        
+        ctx.strokeStyle = 'white';
+        ctx.stroke();
+
+        ctx.lineDashOffset = 10;
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+
+        ctx.closePath();
+
+        ctx.restore();
     }
 
     return {
+        camera,
         begin,
         end,
         track,
@@ -206,7 +285,10 @@ export function getRenderer() {
         renderTrack,
         renderDebug,
         createPath,
-        renderPath
+        renderPath,
+        renderBarrier,
+        renderVector,
+        renderFinish
     };
 }
 

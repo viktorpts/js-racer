@@ -13,7 +13,42 @@ function main() {
     document.getElementById('pause').addEventListener('click', () => going = false);
     document.getElementById('resume').addEventListener('click', () => going = true);
 
-    const scene = new Scene();
+    const track = [
+        { x: 5000, y: 5000 }, // 0
+        { x: 4900, y: 5000 }, // 1
+        { x: 4875, y: 4925 }, // 2
+        { x: 4975, y: 4925 }, // 3
+        { x: 4950, y: 4900 }, // 4
+        { x: 4875, y: 4900 }, // 5
+        { x: 4900, y: 4750 }, // 6
+        { x: 4975, y: 4810 }, // 7
+        { x: 4990, y: 4890 }, // 8
+        { x: 5075, y: 4950 }, // 9
+        { x: 5050, y: 5000 }, // 10
+    ];
+    const scene = new Scene(5000, 5000, Math.PI, track);
+    scene.addWall(4974, 5016, 173, 0);
+    scene.addWall(4872, 4967, 104, 1.25);
+    scene.addWall(4872, 4819, 202, 1.74);
+    scene.addWall(4939, 4760, 130, 0.67);
+    scene.addWall(4998, 4841, 80, 1.39);
+    scene.addWall(5051, 4913, 112, 0.61);
+    scene.addWall(5078, 4981, 80, 2.03);
+
+    scene.addWall(4976, 4984, 128, 0);
+    scene.addWall(4905, 4963, 44, 1.25);
+    scene.addWall(4956, 4942, 117, 0);
+    scene.addWall(4986, 4913, 82, 0.79);
+    scene.addWall(4926, 4884, 62, 0);
+    scene.addWall(4903, 4832, 104, 1.74);
+    scene.addWall(4936, 4800, 62, 0.67);
+    scene.addWall(4967, 4859, 82, 1.39);
+    scene.addWall(5014, 4927, 97, 0.61);
+    scene.addWall(5047, 4969, 32, 2.03);
+    scene.addWall(4901, 4913, 89, 0);
+
+    scene.addWall(4895, 4737, 22, 2.78);
+    scene.addWall(4987, 4930, 24, 1.96);
 
 
     let lastUpdate = performance.now();
@@ -52,7 +87,7 @@ function logDebug(time, actor) {
     }
 
     if (actor.debug.slip !== undefined) {
-        logger.log('Slip', `<ul><li>Front: ${actor.debug.slip.frontSlipRatio.toFixed(1)}</li><li>Rear: ${actor.debug.slip.rearSlipRatio.toFixed(1)}</li></ul>`);
+        logger.log('Slip', `<ul><li>Front: ${toDeg(actor.debug.slip.frontSlipRatio)}</li><li>Rear: ${toDeg(actor.debug.slip.rearSlipRatio)}</li></ul>`);
     }
 
     logger.print();

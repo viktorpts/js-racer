@@ -13,6 +13,8 @@ export default class Car {
         this.x = x;
         this.y = y;
         this.dir = dir;
+        this.width = 2;
+        this.length = 4;
 
         this.goingForward = true;
         this.braking = false;
@@ -31,6 +33,7 @@ export default class Car {
         this.controls = {};
 
 
+        this.collision = false;
         this.debug = {};
     }
 

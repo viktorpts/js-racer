@@ -1,5 +1,6 @@
 import { STEP_SIZE } from './constants.js';
-import { vScale, vMagnitude, vAdd, wrap, vToWorld, vProject, vAngle } from './utility.js';
+import { vScale, vMagnitude, vAdd, wrap, vToWorld, vProject, vAngle, clamp } from './utility.js';
+import { isIntersectingBroad, getResolutionVector } from './sat.js';
 
 const dragCoef = 1.2;
 const rrCoef = 20;
@@ -12,21 +13,23 @@ export function applyLocomotion(actor) {
     const localVelocity = vProject(actor.velocity, actor.vector);
     actor.debug.local = localVelocity;
 
-    let rearSlipRatio = getSlipRatio(getRearSlipAngle(actor, localVelocity.x, localVelocity.y));
+    const rearSlip = getRearSlipAngle(actor, localVelocity.x, localVelocity.y);
+    const frontSlip = getFrontSlipAngle(actor, localVelocity.x, localVelocity.y);
+    let rearSlipRatio = getSlipRatio(rearSlip);
     if (actor.handBrake) {
         rearSlipRatio *= 0.75;
     }
-    const frontSlipRatio = getSlipRatio(getFrontSlipAngle(actor, localVelocity.x, localVelocity.y));
+    const frontSlipRatio = getSlipRatio(frontSlip);
     const rearLat = rearSlipRatio * -corneringCoef;
     const frontLat = frontSlipRatio * Math.cos(actor.turnRate) * -corneringCoef;
     const frontLon = frontSlipRatio * Math.sin(actor.turnRate) * -corneringCoef;
 
     actor.debug.slip = {
-        rearSlipRatio: rearLat,
-        frontSlipRatio: frontLat
+        rearSlipRatio: rearSlip,
+        frontSlipRatio: frontSlip
     };
 
-    applyTurning(actor, localVelocity.x, rearLat, frontLat);
+    applyTorque(actor, localVelocity.x, rearLat, frontLat);
 
     const traction = getTraction(actor);
     const drag = vScale(actor.velocity, -(dragCoef * speed));
@@ -69,10 +72,13 @@ export function getSlipRatio(angle) {
     }
 }
 
-function applyTurning(actor, speed, rearLat, frontLat) {
+function applyTorque(actor, speed, rearLat, frontLat) {
     const torque = -rearLat * 2 + frontLat * 2;
+    if (actor.angularVelocity > 0 && torque < 0 || actor.angularVelocity < 0 && torque > 0) {
+        return actor.angularVelocity = 0;
+    }
     actor.angularVelocity += (torque / inertia) * STEP_SIZE;
-    if (speed === 0) {
+    if (Math.abs(speed) <= 0.5) {
         actor.angularVelocity = 0;
     } else {
         actor.dir = wrap(actor.dir + actor.angularVelocity * STEP_SIZE, 0, Math.PI * 2);
@@ -89,6 +95,29 @@ function getTraction(actor) {
     }
 }
 
+export function resolveCollisions(actor, walls) {
+    for (let wall of walls) {
+        actor.collision = false;
+        if (isIntersectingBroad(actor, wall)) {
+            wall.close = true;
+            const resVector = getResolutionVector(actor, wall);
+            if (resVector.magnitude !== 0) {
+                actor.x -= resVector.x;
+                actor.y -= resVector.y;
+                const speed = vMagnitude(actor.velocity);
+                actor.velocity.x -= resVector.x * 100;
+                actor.velocity.y -= resVector.y * 100;
+                wall.collision = true;
+            } else {
+                wall.collision = false;
+            }
+        } else {
+            wall.close = false;
+            wall.collision = false;
+        }
+    }
+}
+
 export function applyForces(body) {
     body.x += body.velocity.x * STEP_SIZE;
     body.y += body.velocity.y * STEP_SIZE;
@@ -100,7 +129,7 @@ export function applyForces(body) {
         body.angularVelocity = Math.min(body.angularVelocity + 0.05, 0);
     }
     let speed = vMagnitude(body.velocity);
-    const angle = -vAngle(body.velocity, {x: 1, y: 0});
+    const angle = -vAngle(body.velocity, { x: 1, y: 0 });
     if (speed > 0) {
         speed = Math.max(speed - 0.01, 0);
         body.velocity.x = Math.cos(angle) * speed;
