@@ -51,8 +51,8 @@ export function vAngle(a, b) {
         return 0;
     } else {
         const cosTheta = Math.max(Math.min(vDot(a, b) / (vMagnitude(a) * vMagnitude(b)), 1), -1);
-        const dir = Math.sign(vCross(a, b)) < 0 ? -1 : 1;
-        return Math.acos(cosTheta) * dir;
+        const hand = Math.sign(vCross(a, b)) < 0 ? -1 : 1;
+        return Math.acos(cosTheta) * hand;
     }
 }
 
@@ -78,6 +78,6 @@ export function pToWorld(point, body) {
     };
 }
 
-export function vProject(vector, unit) {
-    return {x: vDot(vector, unit), y: vDot(vector, {x: -unit.y, y: unit.x})};
+export function vProject(vector, xAxis) {
+    return {x: vDot(vector, xAxis), y: vDot(vector, {x: -xAxis.y, y: xAxis.x})};
 }

@@ -6,7 +6,7 @@ const powerStep = 50000;
 const mass = 1200;
 
 const turnRateDelta = Math.PI;
-const maxTurnRate = Math.PI * 0.25;
+const maxTurnRate = Math.PI * 0.08;
 
 export default class Car {
     constructor(x = 0, y = 0, dir = 0) {
@@ -83,8 +83,9 @@ export default class Car {
             this.handBrake = false;
         }
 
-        const speed = vMagnitude(this.velocity);
-        const speedMultiplier = Math.max(Math.min((40 - speed) / 35, 1), 0.25);
+        //const speed = vMagnitude(this.velocity);
+        //const speedMultiplier = Math.max(Math.min((40 - speed) / 35, 1), 0.25);
+        const speedMultiplier = 1;
         if (this.controls.ArrowLeft) {
             this.turnRate = Math.max(this.turnRate - turnRateDelta * STEP_SIZE * speedMultiplier, -maxTurnRate * speedMultiplier);
         } else if (this.controls.ArrowRight) {
