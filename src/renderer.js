@@ -1,3 +1,5 @@
+import { vMagnitude } from './utility.js';
+
 const worldScale = 10;
 
 export function getRenderer() {
@@ -7,6 +9,12 @@ export function getRenderer() {
         y: 0,
         zoom: 0.75
     };
+
+    let car = null;
+    loadImg('assets/cart.png').then(img => {
+        console.log('loaded');
+        car = img;
+    });
 
     function begin() {
         ctx.save();
@@ -25,6 +33,8 @@ export function getRenderer() {
         const { x, y } = worldToCanvas({ x: actor.x, y: actor.y });
         camera.x = x;
         camera.y = y;
+        const speed = vMagnitude(actor.velocity);
+        camera.zoom = 1.5 - Math.min(0.75, speed / 100 * 0.75);
     }
 
     function renderGraph() {
@@ -54,26 +64,30 @@ export function getRenderer() {
 
         ctx.rotate(actor.dir);
 
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(-20, -10, 40, 20);
-
         ctx.fillStyle = '#333333';
-        renderWheel(-13, -10, 0);
-        renderWheel(-13, 10, 0);
-        renderWheel(13, -10, actor.turnRate);
-        renderWheel(13, 10, actor.turnRate);
+        renderWheel(-15, -7, 0);
+        renderWheel(-15, 7, 0);
+        renderWheel(13, -7, actor.turnRate);
+        renderWheel(13, 7, actor.turnRate);
 
-        ctx.strokeStyle = 'black';
-        ctx.beginPath();
-        ctx.moveTo(-20, 0);
-        ctx.lineTo(20, 0);
-        ctx.moveTo(0, -10);
-        ctx.lineTo(0, 10);
-        ctx.moveTo(10, 10);
-        ctx.lineTo(20, 0);
-        ctx.lineTo(10, -10);
-        ctx.stroke();
-        ctx.closePath();
+        if (car === null) {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(-20, -10, 40, 20);
+
+            ctx.strokeStyle = 'black';
+            ctx.beginPath();
+            ctx.moveTo(-20, 0);
+            ctx.lineTo(20, 0);
+            ctx.moveTo(0, -10);
+            ctx.lineTo(0, 10);
+            ctx.moveTo(10, 10);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(10, -10);
+            ctx.stroke();
+            ctx.closePath();
+        } else {
+            ctx.drawImage(car, -20, -10, 40, 20);
+        }
 
         if (actor.braking) {
             ctx.fillStyle = 'red';
@@ -100,7 +114,7 @@ export function getRenderer() {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(dir);
-        ctx.fillRect(-4, -2, 8, 4);
+        ctx.fillRect(-4, -3, 8, 6);
         ctx.restore();
     }
 
@@ -183,7 +197,7 @@ export function getRenderer() {
     function renderPath(path) {
         ctx.save();
 
-        
+
         ctx.lineJoin = 'round';
         ctx.strokeStyle = 'green';
         ctx.lineWidth = 350;
@@ -248,7 +262,7 @@ export function getRenderer() {
     }
 
     function renderFinish(wX, wY, dir) {
-        const {x, y} = worldToCanvas({x: wX, y: wY});
+        const { x, y } = worldToCanvas({ x: wX, y: wY });
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(dir);
@@ -262,7 +276,7 @@ export function getRenderer() {
         ctx.lineTo(10, -100);
         ctx.moveTo(20, -100);
         ctx.lineTo(20, 100);
-        
+
         ctx.strokeStyle = 'white';
         ctx.stroke();
 
@@ -305,4 +319,14 @@ function getContext() {
     const ctx = canvas.getContext('2d');
 
     return ctx;
+}
+
+async function loadImg(src) {
+    return new Promise((resolve, reject) => {
+        var img = new Image();
+        img.addEventListener('load', (e) => {
+            resolve(img);
+        });
+        img.src = src;
+    });
 }
