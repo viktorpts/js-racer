@@ -2,27 +2,32 @@ import { vMagnitude } from './utility.js';
 
 const worldScale = 10;
 
-export function getRenderer() {
+export function getRenderer(wX = 0, wY = 0, zoom = 1) {
     const ctx = getContext();
+    const { x, y } = worldToCanvas({ x: wX, y: wY });
     const camera = {
-        x: 0,
-        y: 0,
-        zoom: 0.75
+        x,
+        y,
+        zoom,
+        deltaX: 0,
+        deltaY: 0,
+        deltaZoom: 0,
+        targetX: x,
+        targetY: y,
+        targetZoom: zoom,
     };
 
     let car = null;
-    loadImg('assets/cart.png').then(img => {
-        console.log('loaded');
-        car = img;
-    });
+    loadImg('assets/cart.png').then(img => car = img);
 
     function begin() {
         ctx.save();
         ctx.fillStyle = '#999999';
         ctx.fillRect(0, 0, 800, 600);
         ctx.scale(camera.zoom, camera.zoom);
-        ctx.translate(-camera.x, -camera.y);
         ctx.translate(400 / camera.zoom, 300 / camera.zoom);
+        // Rotation should go here
+        ctx.translate(-camera.x, -camera.y);
     }
 
     function end() {
@@ -31,10 +36,23 @@ export function getRenderer() {
 
     function track(actor) {
         const { x, y } = worldToCanvas({ x: actor.x, y: actor.y });
-        camera.x = x;
-        camera.y = y;
+        camera.targetX = x;
+        camera.targetY = y;
+        camera.targetDir = -actor.dir;
         const speed = vMagnitude(actor.velocity);
-        camera.zoom = 1.5 - Math.min(0.75, speed / 100 * 0.75);
+        camera.targetZoom = 1.5 - Math.min(0.75, speed / 100 * 0.75);
+
+        camera.deltaX = transition(camera.x, camera.targetX, camera.deltaX);
+        camera.x += camera.deltaX;
+        camera.deltaY = transition(camera.y, camera.targetY, camera.deltaY);
+        camera.y += camera.deltaY;
+        camera.deltaZoom = transition(camera.zoom, camera.targetZoom, camera.deltaZoom, 10);
+        camera.zoom += camera.deltaZoom;
+    }
+
+    function transition(current, target, delta, frames = 5) {
+        const requriedDelta = target - current - delta;
+        return requriedDelta / frames;
     }
 
     function renderGraph() {
@@ -128,51 +146,6 @@ export function getRenderer() {
         ctx.closePath();
         ctx.fillStyle = color;
         ctx.fillRect(x * worldScale - 2, y * worldScale - 2, 4, 4);
-        ctx.restore();
-    }
-
-    function renderTrack(track) {
-        ctx.save();
-
-        const start = worldToCanvas(track[0]);
-        ctx.beginPath();
-        ctx.setLineDash([40, 40]);
-
-        ctx.moveTo(start.x, start.y);
-
-        for (let node of track.slice(1)) {
-            const sc = worldToCanvas(node);
-            ctx.lineTo(sc.x, sc.y);
-        }
-        ctx.closePath();
-
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 250;
-        ctx.stroke();
-        ctx.strokeStyle = 'white';
-        ctx.lineDashOffset = 40;
-        ctx.stroke();
-        ctx.strokeStyle = '#999999';
-        ctx.setLineDash([]);
-        ctx.lineWidth = 240;
-        ctx.stroke();
-
-        ctx.restore();
-    }
-
-    function renderDebug() {
-        ctx.save();
-
-        ctx.beginPath();
-        ctx.strokeStyle = 'red';
-        ctx.fillStyle = '#ffffff';
-        ctx.lineWidth = 500;
-        ctx.moveTo(49000, 49000);
-        ctx.lineTo(50000, 50000);
-        ctx.stroke();
-        ctx.closePath();
-
         ctx.restore();
     }
 
@@ -289,6 +262,51 @@ export function getRenderer() {
         ctx.restore();
     }
 
+    function plotGrid(hDiv = 10, vDiv = 10) {
+        ctx.translate(100, 100);
+        ctx.rotate(0.1);
+        ctx.scale(0.75, 0.75);
+
+        const hSpace = 780 / hDiv;
+        const vSpace = 300 / vDiv;
+        ctx.strokeStyle = '#cccccc';
+        ctx.beginPath();
+        for (let col = 0; col < hDiv + 1; col++) {
+            ctx.moveTo(10 + col * hSpace, 0);
+            ctx.lineTo(10 + col * hSpace, 600);
+        }
+        for (let row = 0; row < vDiv * 2 + 1; row++) {
+            ctx.moveTo(10, row * vSpace);
+            ctx.lineTo(790, row * vSpace);
+        }
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function plot(data, vScale = 1, color = 'blue') {
+        const spacing = 780 / (data.length - 1);
+        ctx.save();
+
+        ctx.strokeStyle = 'black';
+        ctx.beginPath();
+        ctx.moveTo(0, 300);
+        ctx.lineTo(800, 300);
+        ctx.stroke();
+        ctx.closePath();
+
+        if (data.length > 0) {
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(10, 300 - data[0] * vScale);
+            for (let i = 1; i < data.length; i++) {
+                ctx.lineTo(10 + i * spacing, 300 - data[i] * vScale);
+            }
+            ctx.stroke();
+            ctx.closePath();
+        }
+        ctx.restore();
+    }
+
     return {
         camera,
         begin,
@@ -296,13 +314,13 @@ export function getRenderer() {
         track,
         renderGraph,
         renderCar,
-        renderTrack,
-        renderDebug,
         createPath,
         renderPath,
         renderBarrier,
         renderVector,
-        renderFinish
+        renderFinish,
+        plotGrid,
+        plot
     };
 }
 
