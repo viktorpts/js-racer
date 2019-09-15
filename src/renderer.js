@@ -263,48 +263,53 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
     }
 
     function plotGrid(hDiv = 10, vDiv = 10) {
-        ctx.translate(100, 100);
-        ctx.rotate(0.1);
-        ctx.scale(0.75, 0.75);
-
-        const hSpace = 780 / hDiv;
-        const vSpace = 300 / vDiv;
+        const hSpace = 1180 / hDiv;
+        const vSpace = 400 / vDiv;
         ctx.strokeStyle = '#cccccc';
         ctx.beginPath();
         for (let col = 0; col < hDiv + 1; col++) {
             ctx.moveTo(10 + col * hSpace, 0);
-            ctx.lineTo(10 + col * hSpace, 600);
+            ctx.lineTo(10 + col * hSpace, 800);
         }
         for (let row = 0; row < vDiv * 2 + 1; row++) {
             ctx.moveTo(10, row * vSpace);
-            ctx.lineTo(790, row * vSpace);
+            ctx.lineTo(1190, row * vSpace);
         }
         ctx.stroke();
         ctx.closePath();
     }
 
     function plot(data, vScale = 1, color = 'blue') {
-        const spacing = 780 / (data.length - 1);
+        let min = Number.POSITIVE_INFINITY;
+        let max = Number.NEGATIVE_INFINITY;
+
+        const spacing = 1180 / (data.length - 1);
         ctx.save();
 
         ctx.strokeStyle = 'black';
         ctx.beginPath();
-        ctx.moveTo(0, 300);
-        ctx.lineTo(800, 300);
+        ctx.moveTo(0, 400);
+        ctx.lineTo(1200, 400);
         ctx.stroke();
         ctx.closePath();
 
         if (data.length > 0) {
+            min = data[0];
+            max = data[0];
             ctx.strokeStyle = color;
             ctx.beginPath();
-            ctx.moveTo(10, 300 - data[0] * vScale);
+            ctx.moveTo(10, 400 - data[0] * vScale);
             for (let i = 1; i < data.length; i++) {
-                ctx.lineTo(10 + i * spacing, 300 - data[i] * vScale);
+                min = data[i] < min ? data[i] : min;
+                max = data[i] > max ? data[i] : max;
+                ctx.lineTo(10 + i * spacing, 400 - data[i] * vScale);
             }
             ctx.stroke();
             ctx.closePath();
         }
         ctx.restore();
+
+        console.log('min:', min, 'max:', max);
     }
 
     return {

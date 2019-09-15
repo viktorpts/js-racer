@@ -5,44 +5,28 @@ import { isIntersectingBroad, getResolutionVector } from './sat.js';
 const dragCoef = 1.2;
 const rrCoef = 20;
 const brakeCoef = 20000;
-const corneringCoef = 40000;
 const inertia = 500;
+// Cornering and friction account for wheel load of 6000N (~600kg)
+const corneringCoef = 40000;
+const frictionCircle = 7000;
 
 export function applyLocomotion(actor) {
     const speed = vMagnitude(actor.velocity);
     const localVelocity = vProject(actor.velocity, actor.vector);
     actor.debug.local = localVelocity;
 
-    const rearSlip = getSlipAngle(localVelocity.x, localVelocity.y, -actor.angularVelocity, 2);
-    const frontSlip = getSlipAngle(localVelocity.x, localVelocity.y, actor.angularVelocity, 2, actor.turnRate);
-    let rearSlipRatio = getSlipRatio(rearSlip);
-    if (actor.handBrake) {
-        rearSlipRatio *= 0.75;
-    }
-    const frontSlipRatio = getSlipRatio(frontSlip);
-    const rearLat = rearSlipRatio * -corneringCoef;
-    const frontLat = frontSlipRatio * Math.cos(actor.turnRate) * -corneringCoef;
-    const frontLon = frontSlipRatio * Math.sin(actor.turnRate) * -corneringCoef;
-
-    actor.debug.slip = {
-        rear: {
-            angle: rearSlip,
-            ratio: rearSlipRatio,
-            latForce: rearLat
-        },
-        front: {
-            angle: frontSlip,
-            ratio: frontSlipRatio,
-            latForce: frontLat,
-            lonForce: frontLon
-        }
+    const slipForce = {
+        rear: getSlipForce(localVelocity.x, localVelocity.y, -actor.angularVelocity, actor.length / 2),
+        front: getSlipForce(localVelocity.x, localVelocity.y, actor.angularVelocity, actor.length / 2, actor.turnRate)
     };
 
-    applyTorque(actor, localVelocity.x, rearLat, frontLat);
+    actor.debug.slip = slipForce;
+
+    applyTorque(actor, localVelocity.x, slipForce.rear.y, slipForce.front.y);
 
     const traction = getTraction(actor);
     const drag = vScale(actor.velocity, -(dragCoef * speed));
-    const rresLocal = { x: localVelocity.x * -rrCoef - frontLon, y: rearLat + frontLat };
+    const rresLocal = { x: localVelocity.x * -rrCoef - slipForce.front.x, y: slipForce.rear.y + slipForce.front.y };
     const rres = vToWorld(rresLocal, actor);
     const force = vAdd(traction, drag, rres);
     const acceleration = vScale(force, 1 / actor.mass);
@@ -51,6 +35,20 @@ export function applyLocomotion(actor) {
 
     actor.velocity.x += acceleration.x * STEP_SIZE;
     actor.velocity.y += acceleration.y * STEP_SIZE;
+}
+
+export function getSlipForce(lonForce, latForce, angularVelocity, dist, turnRate = 0) {
+    const slipAngle = getSlipAngle(lonForce, latForce, angularVelocity, dist, turnRate);
+    const slipRatio = getSlipRatio(slipAngle);
+
+    let slipForce = slipRatio * Math.cos(turnRate) * -corneringCoef;
+    //slipForce = Math.min(slipForce, frictionCircle);
+    return {
+        angle: slipAngle,
+        ratio: slipRatio,
+        x: turnRate === 0 ? 0 : Math.sin(turnRate) * slipForce,
+        y: slipForce
+    };
 }
 
 
@@ -73,18 +71,25 @@ export function getSlipRatio(angle) {
     if (slip <= peak) {
         return slip / peak * multiplier;
     } else {
-        return Math.max(1 - ((slip - peak) * (1 - minRatio)) / (1 - peak), minRatio) * multiplier;
+        return Math.max(1 - ((slip - peak) * (1 - minRatio)) / (1 - peak), 0) * multiplier;
     }
 }
 
 function applyTorque(actor, speed, rearLat, frontLat) {
-    const torque = -rearLat * 2 + frontLat * 2;
+    if (actor.handBrake) {
+        rearLat *= 0.95;
+    }
+    let torque = -rearLat * 2 + frontLat * 2;
+    if (Math.abs(torque) < 0.001) {
+        torque = 0;
+    }
     //*
-    if (actor.angularVelocity > 0 && torque < 0 || actor.angularVelocity < 0 && torque > 0) {
+    const newAV = actor.angularVelocity + (torque / inertia) * STEP_SIZE;
+    if (Math.sign(actor.angularVelocity) * Math.sign(newAV) < 0) {
         return actor.angularVelocity = 0;
     }
     //*/
-    actor.angularVelocity += (torque / inertia) * STEP_SIZE;
+    actor.angularVelocity = newAV;
     if (Math.abs(speed) <= 0.5) {
         actor.angularVelocity = 0;
     } else {
@@ -129,17 +134,19 @@ export function applyForces(body) {
     body.x += body.velocity.x * STEP_SIZE;
     body.y += body.velocity.y * STEP_SIZE;
 
+    /*
     // Damper
     if (body.angularVelocity > 0) {
-        body.angularVelocity = Math.max(body.angularVelocity - 0.05, 0);
+        body.angularVelocity = Math.max(body.angularVelocity - 0.05 * STEP_SIZE, 0);
     } else if (body.angularVelocity < 0) {
-        body.angularVelocity = Math.min(body.angularVelocity + 0.05, 0);
+        body.angularVelocity = Math.min(body.angularVelocity + 0.05 * STEP_SIZE, 0);
     }
     let speed = vMagnitude(body.velocity);
     const angle = -vAngle(body.velocity, { x: 1, y: 0 });
     if (speed > 0) {
-        speed = Math.max(speed - 0.01, 0);
+        speed = Math.max(speed - 0.01 * STEP_SIZE, 0);
         body.velocity.x = Math.cos(angle) * speed;
         body.velocity.y = Math.sin(angle) * speed;
     }
+    //*/
 }

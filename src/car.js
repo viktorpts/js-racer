@@ -5,7 +5,7 @@ const enginePower = 20000;
 const powerStep = 50000;
 const mass = 1200;
 
-const turnRateDelta = Math.PI;
+const turnRateDelta = Math.PI * 1000;
 const maxTurnRate = Math.PI * 0.08;
 
 export default class Car {
