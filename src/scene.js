@@ -5,7 +5,7 @@ import Car from './car.js';
 
 export default class Scene {
     constructor(x = 5000, y = 5000, dir = 0, track = []) {
-        this.renderer = getRenderer();
+        this.renderer = getRenderer(x, y);
         this.startingDir = dir;
 
         const keys = {};
