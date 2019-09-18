@@ -263,11 +263,11 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
     }
 
     function plotGrid(hDiv = 10, vDiv = 10) {
-        const hSpace = 1180 / hDiv;
+        const hSpace = 1180 / (hDiv - 1);
         const vSpace = 400 / vDiv;
         ctx.strokeStyle = '#cccccc';
         ctx.beginPath();
-        for (let col = 0; col < hDiv + 1; col++) {
+        for (let col = 0; col < hDiv; col++) {
             ctx.moveTo(10 + col * hSpace, 0);
             ctx.lineTo(10 + col * hSpace, 800);
         }
@@ -313,6 +313,7 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
     }
 
     return {
+        ctx,
         camera,
         begin,
         end,

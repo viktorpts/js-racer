@@ -1,5 +1,5 @@
 import { STEP_SIZE } from './constants.js';
-import { vScale, vMagnitude, vAdd, wrap, vToWorld, vProject, vAngle, clamp } from './utility.js';
+import { vScale, vMagnitude, vAdd, wrap, vToParent, vProject, vAngle, clamp } from './utility.js';
 import { isIntersectingBroad, getResolutionVector } from './sat.js';
 
 const dragCoef = 1.2;
@@ -27,7 +27,7 @@ export function applyLocomotion(actor) {
     const traction = getTraction(actor);
     const drag = vScale(actor.velocity, -(dragCoef * speed));
     const rresLocal = { x: localVelocity.x * -rrCoef - slipForce.front.x, y: slipForce.rear.y + slipForce.front.y };
-    const rres = vToWorld(rresLocal, actor);
+    const rres = vToParent(rresLocal, actor.dir);
     const force = vAdd(traction, drag, rres);
     const acceleration = vScale(force, 1 / actor.mass);
 
@@ -83,8 +83,8 @@ function applyTorque(actor, speed, rearLat, frontLat) {
     if (Math.abs(torque) < 0.001) {
         torque = 0;
     }
-    //*
     const newAV = actor.angularVelocity + (torque / inertia) * STEP_SIZE;
+    /*
     if (Math.sign(actor.angularVelocity) * Math.sign(newAV) < 0) {
         return actor.angularVelocity = 0;
     }

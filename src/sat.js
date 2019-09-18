@@ -1,4 +1,4 @@
-import { vToWorld, vDot, vScale, pToWorld, vMagnitude } from './utility.js';
+import { vToParent, vDot, vScale, pToWorld, vMagnitude } from './utility.js';
 
 export function isIntersectingBroad(actor, wall) {
     const ray = {
@@ -67,10 +67,10 @@ function getPointPosition(body) {
     const halfW = body.width * 0.5;
     const halfL = body.length * 0.5;
 
-    const p1 = vToWorld({ x: halfL, y: halfW }, body);
-    const p2 = vToWorld({ x: -halfL, y: halfW }, body);
-    const p3 = vToWorld({ x: -halfL, y: -halfW }, body);
-    const p4 = vToWorld({ x: halfL, y: -halfW }, body);
+    const p1 = vToParent({ x: halfL, y: halfW }, body.dir);
+    const p2 = vToParent({ x: -halfL, y: halfW }, body.dir);
+    const p3 = vToParent({ x: -halfL, y: -halfW }, body.dir);
+    const p4 = vToParent({ x: halfL, y: -halfW }, body.dir);
 
     return [p1, p2, p3, p4];
 }

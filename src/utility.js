@@ -56,18 +56,25 @@ export function vAngle(a, b) {
     }
 }
 
-export function vToLocal(vector, body) {
-    return vRotate(vector, -body.dir);
+export function vToLocal(vector, bodyDir) {
+    return vRotate(vector, -bodyDir);
 }
 
-export function vToWorld(vector, body) {
-    return vRotate(vector, body.dir);
+export function vToParent(vector, bodyDir) {
+    return vRotate(vector, bodyDir);
 }
 
 export function vRotate(vector, angle) {
     return {
         x: Math.cos(angle) * vector.x - Math.sin(angle) * vector.y,
         y: Math.sin(angle) * vector.x + Math.cos(angle) * vector.y
+    };
+}
+
+export function vNegate(vector) {
+    return {
+        x: -vector.x,
+        y: -vector.y
     };
 }
 
