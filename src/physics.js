@@ -7,7 +7,7 @@ const rrCoef = 20;
 const brakeCoef = 20000;
 const inertia = 500;
 // Cornering and friction account for wheel load of 6000N (~600kg)
-const corneringCoef = 40000;
+const corneringCoef = 25000;
 const frictionCircle = 7000;
 
 export function applyLocomotion(actor) {
@@ -41,7 +41,7 @@ export function getSlipForce(lonForce, latForce, angularVelocity, dist, turnRate
     const slipAngle = getSlipAngle(lonForce, latForce, angularVelocity, dist, turnRate);
     const slipRatio = getSlipRatio(slipAngle);
 
-    let slipForce = slipRatio * Math.cos(turnRate) * -corneringCoef;
+    let slipForce = slipRatio * Math.cos(turnRate) * -corneringCoef * Math.abs(slipAngle);
     //slipForce = Math.min(slipForce, frictionCircle);
     return {
         angle: slipAngle,
