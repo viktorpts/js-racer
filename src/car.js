@@ -1,9 +1,9 @@
 import { STEP_SIZE } from './constants.js';
 import { vAngle, vMagnitude } from './utility.js';
 
-const enginePower = 20000;
-const powerStep = 50000;
-const mass = 1200;
+const enginePower = 4000;
+const powerStep = 10000;
+const mass = 200;
 
 const turnRateDelta = Math.PI * 1000;
 const maxTurnRate = Math.PI * 0.08;
@@ -13,8 +13,8 @@ export default class Car {
         this.x = x;
         this.y = y;
         this.dir = dir;
-        this.width = 2;
-        this.length = 4;
+        this.width = 1;
+        this.length = 2;
 
         this.goingForward = true;
         this.braking = false;
@@ -88,8 +88,10 @@ export default class Car {
         const speedMultiplier = 1;
         if (this.controls.ArrowLeft) {
             this.turnRate = Math.max(this.turnRate - turnRateDelta * STEP_SIZE * speedMultiplier, -maxTurnRate * speedMultiplier);
+            //this.angularVelocity -= turnRateDelta * STEP_SIZE * 0.025;
         } else if (this.controls.ArrowRight) {
             this.turnRate = Math.min(this.turnRate + turnRateDelta * STEP_SIZE * speedMultiplier, maxTurnRate * speedMultiplier);
+            //this.angularVelocity += turnRateDelta * STEP_SIZE * 0.025;
         } else {
             if (this.turnRate > 0) {
                 this.turnRate = Math.max(this.turnRate - turnRateDelta * STEP_SIZE, 0);

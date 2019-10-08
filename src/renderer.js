@@ -1,4 +1,4 @@
-import { vMagnitude } from './utility.js';
+import { vMagnitude, wrap } from './utility.js';
 
 const worldScale = 10;
 
@@ -9,12 +9,15 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
         x,
         y,
         zoom,
+        dir: 0,
         deltaX: 0,
         deltaY: 0,
         deltaZoom: 0,
+        deltaDir: 0,
         targetX: x,
         targetY: y,
         targetZoom: zoom,
+        targetDir: 0
     };
 
     let car = null;
@@ -26,7 +29,10 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
         ctx.fillRect(0, 0, 800, 600);
         ctx.scale(camera.zoom, camera.zoom);
         ctx.translate(400 / camera.zoom, 300 / camera.zoom);
+        /*
         // Rotation should go here
+        ctx.rotate(camera.dir - Math.PI * 0.5);
+        //*/
         ctx.translate(-camera.x, -camera.y);
     }
 
@@ -40,7 +46,7 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
         camera.targetY = y;
         camera.targetDir = -actor.dir;
         const speed = vMagnitude(actor.velocity);
-        camera.targetZoom = 1.5 - Math.min(0.75, speed / 100 * 0.75);
+        camera.targetZoom = 3 - Math.min(2, speed / 100 * 2);
 
         camera.deltaX = transition(camera.x, camera.targetX, camera.deltaX);
         camera.x += camera.deltaX;
@@ -48,10 +54,31 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
         camera.y += camera.deltaY;
         camera.deltaZoom = transition(camera.zoom, camera.targetZoom, camera.deltaZoom, 10);
         camera.zoom += camera.deltaZoom;
+
+        camera.deltaDir = transition(camera.dir, camera.targetDir, camera.deltaDir, 10, true);
+        camera.dir = wrap(camera.dir + camera.deltaDir, 0, Math.PI * 2);
     }
 
-    function transition(current, target, delta, frames = 5) {
-        const requriedDelta = target - current - delta;
+    //console.log(transition(0.05, 0.15, 0.05, 1, true).toFixed(3));
+    //console.log(transition(0.05, Math.PI * 2 - 0.05, -0.05, 1, true).toFixed(3));
+    //console.log(transition(Math.PI * 2 - 0.05, 0.05, 0.05, 1, true).toFixed(3));
+
+    function transition(current, target, delta, frames = 5, rotation = false) {
+        let requriedDelta = target - current - delta;
+        //console.log(requriedDelta.toFixed(2));
+        if (rotation) {
+            const left = (target - Math.PI * 2) - current - delta;
+            //console.log(left.toFixed(2));
+            if (Math.abs(left) < Math.abs(requriedDelta)) {
+                requriedDelta = left;
+            }
+            const reverse = (Math.PI * 2 + target) - current - delta;
+            //console.log(reverse.toFixed(2));
+            if (Math.abs(reverse) < Math.abs(requriedDelta)) {
+                requriedDelta = reverse;
+            }
+        }
+        //console.log(requriedDelta);
         return requriedDelta / frames;
     }
 
@@ -83,38 +110,38 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
         ctx.rotate(actor.dir);
 
         ctx.fillStyle = '#333333';
-        renderWheel(-15, -7, 0);
-        renderWheel(-15, 7, 0);
-        renderWheel(13, -7, actor.turnRate);
-        renderWheel(13, 7, actor.turnRate);
+        renderWheel(-7.5, -4, 0);
+        renderWheel(-7.5, 4, 0);
+        renderWheel(6.5, -4, actor.turnRate);
+        renderWheel(6.5, 4, actor.turnRate);
 
         if (car === null) {
             ctx.fillStyle = 'blue';
-            ctx.fillRect(-20, -10, 40, 20);
+            ctx.fillRect(-10, -5, 20, 10);
 
             ctx.strokeStyle = 'black';
             ctx.beginPath();
-            ctx.moveTo(-20, 0);
-            ctx.lineTo(20, 0);
-            ctx.moveTo(0, -10);
-            ctx.lineTo(0, 10);
-            ctx.moveTo(10, 10);
-            ctx.lineTo(20, 0);
-            ctx.lineTo(10, -10);
+            ctx.moveTo(-10, 0);
+            ctx.lineTo(10, 0);
+            ctx.moveTo(0, -5);
+            ctx.lineTo(0, 5);
+            ctx.moveTo(5, 5);
+            ctx.lineTo(10, 0);
+            ctx.lineTo(5, -5);
             ctx.stroke();
             ctx.closePath();
         } else {
-            ctx.drawImage(car, -20, -10, 40, 20);
+            ctx.drawImage(car, -10, -5, 20, 10);
         }
 
         if (actor.braking) {
             ctx.fillStyle = 'red';
-            ctx.fillRect(-19, -10, 2, 4);
-            ctx.fillRect(-19, 6, 2, 4);
+            ctx.fillRect(-9, -5, 1, 2);
+            ctx.fillRect(-9, 3, 1, 2);
         } else if (actor.reversing) {
             ctx.fillStyle = 'white';
-            ctx.fillRect(-19, -10, 2, 4);
-            ctx.fillRect(-19, 6, 2, 4);
+            ctx.fillRect(-9, -5, 1, 2);
+            ctx.fillRect(-9, 3, 1, 2);
         }
 
         // Vector debu
@@ -132,7 +159,7 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(dir);
-        ctx.fillRect(-4, -3, 8, 6);
+        ctx.fillRect(-2, -2, 4, 4);
         ctx.restore();
     }
 
@@ -178,7 +205,7 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
 
         ctx.setLineDash([40, 40]);
         ctx.strokeStyle = 'black';
-        ctx.lineWidth = 250;
+        ctx.lineWidth = 100;
         ctx.stroke(path);
 
         ctx.strokeStyle = 'white';
@@ -187,7 +214,7 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
 
         ctx.strokeStyle = '#999999';
         ctx.setLineDash([]);
-        ctx.lineWidth = 240;
+        ctx.lineWidth = 90;
         ctx.stroke(path);
 
         ctx.restore();
@@ -241,19 +268,19 @@ export function getRenderer(wX = 0, wY = 0, zoom = 1) {
         ctx.rotate(dir);
 
         ctx.beginPath();
-        ctx.lineWidth = 10;
-        ctx.setLineDash([10, 10]);
-        ctx.moveTo(0, -100);
-        ctx.lineTo(0, 100);
-        ctx.moveTo(10, 100);
-        ctx.lineTo(10, -100);
-        ctx.moveTo(20, -100);
-        ctx.lineTo(20, 100);
+        ctx.lineWidth = 5;
+        ctx.setLineDash([5, 5]);
+        ctx.moveTo(0, -40);
+        ctx.lineTo(0, 40);
+        ctx.moveTo(5, 40);
+        ctx.lineTo(5, -40);
+        ctx.moveTo(10, -40);
+        ctx.lineTo(10, 40);
 
         ctx.strokeStyle = 'white';
         ctx.stroke();
 
-        ctx.lineDashOffset = 10;
+        ctx.lineDashOffset = 5;
         ctx.strokeStyle = 'black';
         ctx.stroke();
 

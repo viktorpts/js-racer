@@ -65,10 +65,10 @@ export function vToParent(vector, bodyDir) {
 }
 
 export function vRotate(vector, angle) {
-    return {
+    return Object.assign({}, vector, {
         x: Math.cos(angle) * vector.x - Math.sin(angle) * vector.y,
         y: Math.sin(angle) * vector.x + Math.cos(angle) * vector.y
-    };
+    });
 }
 
 export function vNegate(vector) {
